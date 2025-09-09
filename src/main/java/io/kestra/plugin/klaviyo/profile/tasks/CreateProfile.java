@@ -243,7 +243,7 @@ public class CreateProfile extends Task implements RunnableTask<CreateProfile.Ou
             if (attrs != null) {
                 logger.info("Profile created/updated successfully in Klaviyo with ID: {}", dataNode.getId());
                 return Output.builder()
-                    .status("success")
+                    .status(Constants.SUCCESS)
                     .profileId(dataNode.getId())
                     .email(attrs.getEmail())
                     .phoneNumber(attrs.getPhoneNumber())

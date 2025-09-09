@@ -33,4 +33,9 @@ public class Constants {
     public static final String ERROR = "error";
     public static final String ANONYMOUS_ID = "anonymous_id";
     public static final String LAST_EVENT_DATE = "last_event_date";
+    public static final String SUCCESS = "success";
+    public static final String LIST_URL = "https://a.klaviyo.com/api/lists/";
+    public static final String LIST = "list";
+    public static final String ID = "id";
+
 }
