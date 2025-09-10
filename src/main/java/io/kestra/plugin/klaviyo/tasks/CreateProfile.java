@@ -1,4 +1,4 @@
-package io.kestra.plugin.klaviyo.profile.tasks;
+package io.kestra.plugin.klaviyo.tasks;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kestra.core.http.HttpRequest;
@@ -11,18 +11,14 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.klaviyo.constants.Constants;
-import io.kestra.plugin.klaviyo.profile.models.KlaviyoErrorResponse;
-import io.kestra.plugin.klaviyo.profile.models.KlaviyoProfileResponse;
-import io.kestra.plugin.klaviyo.profile.models.Location;
-import io.kestra.plugin.klaviyo.profile.utils.Utils;
+import io.kestra.plugin.klaviyo.models.requests.ProfileCreateRequest;
+import io.kestra.plugin.klaviyo.models.responses.error.ErrorResponse;
+import io.kestra.plugin.klaviyo.models.responses.success.ProfileCreateSuccessResponse;
+import io.kestra.plugin.klaviyo.utils.Utils;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.core5.http.ClassicHttpRequest;
-import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.io.entity.StringEntity;
-import org.apache.hc.core5.http.message.BasicHeader;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
@@ -68,12 +64,6 @@ import java.util.Map;
     }
 )
 public class CreateProfile extends Task implements RunnableTask<CreateProfile.Output> {
-    @Schema(
-        title = "Klaviyo Public API Key",
-        description = "Klaviyo Public API Key"
-    )
-    private Property<String> publicApiKey;
-
     @Schema(
         title = "Klaviyo Private API Key",
         description = "Klaviyo Private API Key"
@@ -144,7 +134,7 @@ public class CreateProfile extends Task implements RunnableTask<CreateProfile.Ou
         title = "Location details",
         description = "Location details of the profile."
     )
-    private Property<Location> location;
+    private Property<ProfileCreateSuccessResponse.Location> location;
 
     @Schema(
         title = "Custom properties of the profile",
@@ -158,7 +148,6 @@ public class CreateProfile extends Task implements RunnableTask<CreateProfile.Ou
         ObjectMapper objectMapper = Utils.getMapper();
         HttpClient httpClient = Utils.getHttpClient(runContext);
 
-        String renderedPublicApiKey = runContext.render(publicApiKey).as(String.class).orElse(null);
         String renderedPrivateApiKey = runContext.render(privateApiKey).as(String.class).orElse(null);
         String renderedRevision = runContext.render(revision).as(String.class).orElse("2025-07-15");
         String renderedEmail = runContext.render(email).as(String.class).orElse(null);
@@ -170,116 +159,98 @@ public class CreateProfile extends Task implements RunnableTask<CreateProfile.Ou
         String renderedLocale = runContext.render(locale).as(String.class).orElse(null);
         String renderedTitle = runContext.render(title).as(String.class).orElse(null);
         String renderedImage = runContext.render(image).as(String.class).orElse(null);
-        Location renderedLocation = runContext.render(location).as(Location.class).orElse(null);
+        ProfileCreateSuccessResponse.Location renderedLocation = runContext.render(location).as(ProfileCreateSuccessResponse.Location.class).orElse(null);
         Map<String, Object> renderedProperties = runContext.render(properties).asMap(String.class, Object.class);
 
         logger.info("Creating profile in Klaviyo...");
 
         // attributes
-        Map<String, Object> attributes = new HashMap<>();
-        if (renderedEmail != null) attributes.put(Constants.EMAIL, renderedEmail);
-        if (renderedPhone != null) attributes.put(Constants.PHONE_NUMBER, renderedPhone);
-        if (renderedExternalId != null) attributes.put(Constants.EXTERNAL_ID, renderedExternalId);
-        if (renderedFirstName != null) attributes.put(Constants.FIRST_NAME, renderedFirstName);
-        if (renderedLastName != null) attributes.put(Constants.LAST_NAME, renderedLastName);
-        if (renderedOrganization != null) attributes.put(Constants.ORGANIZATION, renderedOrganization);
-        if (renderedLocale != null) attributes.put(Constants.LOCALE, renderedLocale);
-        if (renderedTitle != null) attributes.put(Constants.TITLE, renderedTitle);
-        if (renderedImage != null) attributes.put(Constants.IMAGE, renderedImage);
-        if (renderedLocation != null) {
-            Map<String, Object> locationMap = getStringObjectMap(renderedLocation);
-            attributes.put(Constants.LOCATION, locationMap);
-        }
-        if (renderedProperties != null && !renderedProperties.isEmpty()) {
-            Map<String, Object> propertiesMap = new HashMap<>(renderedProperties);
-            attributes.put(Constants.PROPERTIES, propertiesMap);
-        }
+        ProfileCreateRequest.Attributes attributes = ProfileCreateRequest.Attributes.builder()
+            .email(renderedEmail)
+            .phone_number(renderedPhone)
+            .external_id(renderedExternalId)
+            .first_name(renderedFirstName)
+            .last_name(renderedLastName)
+            .organization(renderedOrganization)
+            .locale(renderedLocale)
+            .title(renderedTitle)
+            .image(renderedImage)
+            .location(renderedLocation != null ? ProfileCreateRequest.Location.builder()
+                .address1(renderedLocation.getAddress1())
+                .address2(renderedLocation.getAddress2())
+                .city(renderedLocation.getCity())
+                .country(renderedLocation.getCountry())
+                .latitude(renderedLocation.getLatitude())
+                .longitude(renderedLocation.getLongitude())
+                .region(renderedLocation.getRegion())
+                .zip(renderedLocation.getZip())
+                .timezone(renderedLocation.getTimezone())
+                .ip(renderedLocation.getIp())
+                .build() : null)
+            .properties(renderedProperties != null ? new HashMap<>(renderedProperties) : null)
+            .build();
 
-        // data
-        Map<String, Object> data = new HashMap<>();
-        data.put(Constants.TYPE, Constants.PROFILE);
-        data.put(Constants.ATTRIBUTES, attributes);
+        ProfileCreateRequest profileCreateRequest = ProfileCreateRequest.builder()
+                    .data(ProfileCreateRequest.Data.builder()
+                        .type(Constants.PROFILE)
+                        .attributes(attributes)
+                        .build())
+                    .build();
 
-        // request body
-        Map<String, Object> requestBodyMap = new HashMap<>();
-        requestBodyMap.put(Constants.DATA, data);
+        String profileCreateRequestJson = objectMapper.writeValueAsString(profileCreateRequest);
 
-        String requestBodyJson = objectMapper.writeValueAsString(requestBodyMap);
-
-        ClassicHttpRequest request = new HttpPost(Constants.PROFILE_URL);
-        request.setEntity(new StringEntity(requestBodyJson, ContentType.APPLICATION_JSON));
-        request.addHeader(new BasicHeader("Content-Type", "application/vnd.api+json"));
-        request.addHeader(new BasicHeader("Accept", "application/vnd.api+json"));
-        request.addHeader(new BasicHeader("Revision", renderedRevision));
-        request.addHeader(new BasicHeader("Authorization", "Klaviyo-API-Key " + renderedPrivateApiKey));
-
+        ClassicHttpRequest request = Utils.getHttpRequest(Constants.PROFILE_URL, profileCreateRequestJson, renderedRevision, renderedPrivateApiKey);
         HttpRequest httpRequest = HttpRequest.from(request);
 
         // response
         HttpResponse httpResponse = httpClient.request(httpRequest);
-        Object responseBody = httpResponse.getBody();
-        Map<String, Object> responseMap = objectMapper.convertValue(responseBody, Map.class);
-
-        // error response
-        if(responseMap.containsKey(Constants.ERRORS)){
-            KlaviyoErrorResponse klaviyoErrorResponse = objectMapper.convertValue(responseBody, KlaviyoErrorResponse.class);
-            List<KlaviyoErrorResponse.ErrorDetail> errorDetails = klaviyoErrorResponse.getErrors();
-            KlaviyoErrorResponse.ErrorDetail errorDetail = errorDetails.get(0);
+        int statusCode = httpResponse.getStatus().getCode();
+        if (statusCode!=201) {
+            ErrorResponse errorResponse = objectMapper.convertValue(httpResponse.getBody(), ErrorResponse.class);
+            List<ErrorResponse.ErrorDetail> errorDetails = errorResponse.getErrors();
+            ErrorResponse.ErrorDetail errorDetail = errorDetails.getFirst();
             logger.error("Failed to create/update profile in Klaviyo: {}", objectMapper.writeValueAsString(errorDetails));
             return Output.builder()
                 .status(Constants.ERROR)
                 .errorMessage(errorDetail.getDetail())
-                .errorStatusCode(errorDetail.getStatus())
+                .errorStatusCode(statusCode)
                 .errorTitle(errorDetail.getTitle())
                 .errorCode(errorDetail.getCode())
                 .build();
         }
 
         // success response
-        KlaviyoProfileResponse klaviyoProfileResponse = objectMapper.convertValue(responseBody, KlaviyoProfileResponse.class);
-        KlaviyoProfileResponse.DataNode dataNode = klaviyoProfileResponse.getData();
+        ProfileCreateSuccessResponse profileCreateSuccessResponse = objectMapper.convertValue(httpResponse.getBody(), ProfileCreateSuccessResponse.class);
+        ProfileCreateSuccessResponse.Data dataNode = profileCreateSuccessResponse.getData();
         if (dataNode != null) {
-            KlaviyoProfileResponse.DataNode.Attributes attrs = dataNode.getAttributes();
+            ProfileCreateSuccessResponse.Attributes attrs = dataNode.getAttributes();
             if (attrs != null) {
                 logger.info("Profile created/updated successfully in Klaviyo with ID: {}", dataNode.getId());
                 return Output.builder()
                     .status(Constants.SUCCESS)
                     .profileId(dataNode.getId())
                     .email(attrs.getEmail())
-                    .phoneNumber(attrs.getPhoneNumber())
-                    .externalId(attrs.getExternalId())
-                    .firstName(attrs.getFirstName())
-                    .lastName(attrs.getLastName())
+                    .phoneNumber(attrs.getPhone_number())
+                    .externalId(attrs.getExternal_id())
+                    .firstName(attrs.getFirst_name())
+                    .lastName(attrs.getLast_name())
                     .organization(attrs.getOrganization())
                     .locale(attrs.getLocale())
                     .title(attrs.getTitle())
                     .image(attrs.getImage())
                     .created(attrs.getCreated())
                     .updated(attrs.getUpdated())
-                    .lastEventDate(attrs.getLastEventDate())
+                    .lastEventDate(attrs.getLast_event_date())
                     .location(attrs.getLocation())
                     .properties(attrs.getProperties())
                     .build();
             }
         }
-        logger.error("Failed to create/update profile in Klaviyo. Response: {}", objectMapper.writeValueAsString(responseBody));
+
+        logger.error("Failed to create/update profile in Klaviyo. Response: {}", objectMapper.writeValueAsString(httpResponse.getBody()));
         return Output.builder().build();
     }
 
-    private static Map<String, Object> getStringObjectMap(Location renderedLocation) {
-        Map<String, Object> locationMap = new java.util.HashMap<>();
-        if (renderedLocation.getAddress1() != null) locationMap.put(Constants.ADDRESS1, renderedLocation.getAddress1());
-        if (renderedLocation.getAddress2() != null) locationMap.put(Constants.ADDRESS2, renderedLocation.getAddress2());
-        if (renderedLocation.getCity() != null) locationMap.put(Constants.CITY, renderedLocation.getCity());
-        if (renderedLocation.getCountry() != null) locationMap.put(Constants.COUNTRY, renderedLocation.getCountry());
-        if (renderedLocation.getLatitude() != null) locationMap.put(Constants.LATITUDE, renderedLocation.getLatitude());
-        if (renderedLocation.getLongitude() != null) locationMap.put(Constants.LONGITUDE, renderedLocation.getLongitude());
-        if (renderedLocation.getRegion() != null) locationMap.put(Constants.REGION, renderedLocation.getRegion());
-        if (renderedLocation.getZip() != null) locationMap.put(Constants.ZIP, renderedLocation.getZip());
-        if (renderedLocation.getTimezone() != null) locationMap.put(Constants.TIMEZONE, renderedLocation.getTimezone());
-        if (renderedLocation.getIp() != null) locationMap.put(Constants.IP, renderedLocation.getIp());
-        return locationMap;
-    }
 
     @Builder
     @Getter
@@ -327,7 +298,7 @@ public class CreateProfile extends Task implements RunnableTask<CreateProfile.Ou
         private final String lastEventDate;
 
         @Schema(title = "Location details of the created/updated profile")
-        private final Location location;
+        private final ProfileCreateSuccessResponse.Location location;
 
         @Schema(title = "Custom properties of the created/updated profile")
         private final Map<String, Object> properties;

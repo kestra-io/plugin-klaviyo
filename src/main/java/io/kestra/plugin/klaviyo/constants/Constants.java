@@ -37,5 +37,7 @@ public class Constants {
     public static final String LIST_URL = "https://a.klaviyo.com/api/lists/";
     public static final String LIST = "list";
     public static final String ID = "id";
+    public static final String TEMPLATE = "template";
+    public static final String TEMPLATE_URL = "https://a.klaviyo.com/api/templates/";
 
 }

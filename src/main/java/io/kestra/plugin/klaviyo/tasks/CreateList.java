@@ -1,4 +1,4 @@
-package io.kestra.plugin.klaviyo.list.tasks;
+package io.kestra.plugin.klaviyo.tasks;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kestra.core.http.HttpRequest;
@@ -11,22 +11,17 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.klaviyo.constants.Constants;
-import io.kestra.plugin.klaviyo.list.models.KlaviyoListCreateSuccessResponse;
-import io.kestra.plugin.klaviyo.list.models.KlaviyoListCreateErrorResponse;
+import io.kestra.plugin.klaviyo.models.requests.ListCreateRequest;
+import io.kestra.plugin.klaviyo.models.responses.error.ErrorResponse;
+import io.kestra.plugin.klaviyo.models.responses.success.ListCreateSuccessResponse;
 import io.kestra.plugin.klaviyo.utils.Utils;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.core5.http.ClassicHttpRequest;
-import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.io.entity.StringEntity;
-import org.apache.hc.core5.http.message.BasicHeader;
 import org.slf4j.Logger;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @SuperBuilder
 @ToString
@@ -34,16 +29,15 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Create a Klaviyo List",
+    title = "Create a Klaviyo list",
     description = "Creates a new list in Klaviyo."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Create a list with a name",
+            title = "Create a list",
             code = {
-                "privateApiKey: \"<YOUR_PRIVATE_API_KEY>\"",
-                "name: \"My Customers\""
+                "name: \"Newsletter Subscribers\""
             }
         )
     }
@@ -63,7 +57,7 @@ public class CreateList extends Task implements RunnableTask<CreateList.Output> 
 
     @Schema(
         title = "Name of the list",
-        description = "The name of the list to be created"
+        description = "Name of the list to create"
     )
     private Property<String> name;
 
@@ -73,60 +67,52 @@ public class CreateList extends Task implements RunnableTask<CreateList.Output> 
         ObjectMapper objectMapper = Utils.getMapper();
         HttpClient httpClient = Utils.getHttpClient(runContext);
 
-        String renderedPrivateApiKey = runContext.render(privateApiKey).as(String.class).orElseThrow();
+        String renderedPrivateApiKey = runContext.render(privateApiKey).as(String.class).orElse(null);
         String renderedRevision = runContext.render(revision).as(String.class).orElse("2025-07-15");
-        String renderedName = runContext.render(name).as(String.class).orElseThrow();
+        String renderedName = runContext.render(name).as(String.class).orElse(null);
 
-        logger.info("Creating list '{}' in Klaviyo...", renderedName);
+        logger.info("Creating list in Klaviyo...");
 
         // attributes
-        Map<String, Object> attributes = new HashMap<>();
-        attributes.put("name", renderedName);
+        ListCreateRequest.Attributes attributes = ListCreateRequest.Attributes.builder()
+            .name(renderedName)
+            .build();
 
-        // data
-        Map<String, Object> data = new HashMap<>();
-        data.put(Constants.TYPE, "list");
-        data.put(Constants.ATTRIBUTES, attributes);
+        // full request
+        ListCreateRequest listCreateRequest = ListCreateRequest.builder()
+            .data(ListCreateRequest.Data.builder()
+                .type(Constants.LIST)
+                .attributes(attributes)
+                .build())
+            .build();
 
-        // request body
-        Map<String, Object> requestBodyMap = new HashMap<>();
-        requestBodyMap.put("data", data);
+        String listCreateRequestJson = objectMapper.writeValueAsString(listCreateRequest);
 
-        String requestBodyJson = objectMapper.writeValueAsString(requestBodyMap);
-
-        ClassicHttpRequest request = new HttpPost(Constants.LIST_URL);
-        request.setEntity(new StringEntity(requestBodyJson, ContentType.APPLICATION_JSON));
-        request.addHeader(new BasicHeader("Content-Type", "application/vnd.api+json"));
-        request.addHeader(new BasicHeader("Accept", "application/vnd.api+json"));
-        request.addHeader(new BasicHeader("Revision", renderedRevision));
-        request.addHeader(new BasicHeader("Authorization", "Klaviyo-API-Key " + renderedPrivateApiKey));
-
+        ClassicHttpRequest request = Utils.getHttpRequest(Constants.LIST_URL, listCreateRequestJson, renderedRevision, renderedPrivateApiKey);
         HttpRequest httpRequest = HttpRequest.from(request);
 
+        // response
         HttpResponse httpResponse = httpClient.request(httpRequest);
-        Object responseBody = httpResponse.getBody();
-        Map<String, Object> responseMap = objectMapper.convertValue(responseBody, Map.class);
-
-        // error response
-        if (responseMap.containsKey(Constants.ERRORS)) {
-            KlaviyoListCreateErrorResponse klaviyoListCreateErrorResponse = objectMapper.convertValue(responseBody, KlaviyoListCreateErrorResponse.class);
-            List<KlaviyoListCreateErrorResponse.ErrorDetail> errorDetails = klaviyoListCreateErrorResponse.getErrors();
-            KlaviyoListCreateErrorResponse.ErrorDetail errorDetail = errorDetails.get(0);
+        int statusCode = httpResponse.getStatus().getCode();
+        if (statusCode != 201) {
+            ErrorResponse errorResponse = objectMapper.convertValue(httpResponse.getBody(), ErrorResponse.class);
+            List<ErrorResponse.ErrorDetail> errorDetails = errorResponse.getErrors();
+            ErrorResponse.ErrorDetail errorDetail = errorDetails.getFirst();
             logger.error("Failed to create list in Klaviyo: {}", objectMapper.writeValueAsString(errorDetails));
             return Output.builder()
                 .status(Constants.ERROR)
                 .errorMessage(errorDetail.getDetail())
+                .errorStatusCode(statusCode)
                 .errorTitle(errorDetail.getTitle())
                 .errorCode(errorDetail.getCode())
                 .build();
         }
 
         // success response
-        KlaviyoListCreateSuccessResponse klaviyoListCreateSuccessResponse = objectMapper.convertValue(responseBody, KlaviyoListCreateSuccessResponse.class);
-        KlaviyoListCreateSuccessResponse.DataNode dataNode = klaviyoListCreateSuccessResponse.getData();
-
+        ListCreateSuccessResponse listCreateSuccessResponse = objectMapper.convertValue(httpResponse.getBody(), ListCreateSuccessResponse.class);
+        ListCreateSuccessResponse.Data dataNode = listCreateSuccessResponse.getData();
         if (dataNode != null) {
-            KlaviyoListCreateSuccessResponse.Attributes attrs = dataNode.getAttributes();
+            ListCreateSuccessResponse.Attributes attrs = dataNode.getAttributes();
             if (attrs != null) {
                 logger.info("List created successfully in Klaviyo with ID: {}", dataNode.getId());
                 return Output.builder()
@@ -135,13 +121,12 @@ public class CreateList extends Task implements RunnableTask<CreateList.Output> 
                     .name(attrs.getName())
                     .created(attrs.getCreated())
                     .updated(attrs.getUpdated())
-                    .optInProcess(attrs.getOptInProcess())
                     .build();
             }
         }
 
-        logger.error("Failed to create list in Klaviyo. Response: {}", objectMapper.writeValueAsString(responseBody));
-        return Output.builder().status(Constants.ERROR).build();
+        logger.error("Failed to create list in Klaviyo. Response: {}", objectMapper.writeValueAsString(httpResponse.getBody()));
+        return Output.builder().build();
     }
 
     @Builder
@@ -156,14 +141,11 @@ public class CreateList extends Task implements RunnableTask<CreateList.Output> 
         @Schema(title = "Name of the created list")
         private final String name;
 
-        @Schema(title = "Creation date of the list")
+        @Schema(title = "Creation timestamp of the list")
         private final String created;
 
-        @Schema(title = "Last update date of the list")
+        @Schema(title = "Last updated timestamp of the list")
         private final String updated;
-
-        @Schema(title = "Opt-in process type of the list")
-        private final String optInProcess;
 
         @Schema(title = "Error message if list creation failed")
         private final String errorMessage;
