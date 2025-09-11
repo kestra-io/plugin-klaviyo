@@ -20,7 +20,7 @@ public class AddProfilesToListRequest {
     @AllArgsConstructor
     @ToString
     public static class Data {
-        private String type;
+        private String type; // "profile"
         private String id;
     }
 }

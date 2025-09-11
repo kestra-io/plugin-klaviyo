@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
             title = "Add profiles to a list",
             code = {
                 "privateApiKey: \"pk_xxxxx\"",
+                "revision: \"2025-07-15\"",
                 "listId: \"YnP9Es\"",
                 "profileIds:",
                 "  - \"01H23A4BCD5EFGH678IJK9LMNO\"",
@@ -106,15 +107,11 @@ public class AddProfilesToList extends Task implements RunnableTask<AddProfilesT
 
         if (statusCode != 204) {
             ErrorResponse errorResponse = objectMapper.convertValue(httpResponse.getBody(), ErrorResponse.class);
-            List<ErrorResponse.ErrorDetail> errorDetails = errorResponse.getErrors();
-            ErrorResponse.ErrorDetail errorDetail = errorDetails.getFirst();
-            logger.error("Failed to add profiles to list: {}", objectMapper.writeValueAsString(errorDetails));
+            logger.error("Failed to add profiles to list {}: {}", renderedListId, errorResponse);
             return Output.builder()
                 .status(Constants.ERROR)
-                .errorMessage(errorDetail.getDetail())
-                .errorStatusCode(statusCode)
-                .errorTitle(errorDetail.getTitle())
-                .errorCode(errorDetail.getCode())
+                .statusCode(statusCode)
+                .errorResponse(errorResponse)
                 .build();
         }
 
@@ -123,26 +120,21 @@ public class AddProfilesToList extends Task implements RunnableTask<AddProfilesT
 
         return Output.builder()
             .status(Constants.SUCCESS)
+            .statusCode(statusCode)
             .build();
     }
 
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(title = "Status of the operation")
+        @Schema(title = "Status of the profile addition to list")
         private final String status;
 
-        @Schema(title = "Error message if failed")
-        private final String errorMessage;
+        @Schema(title = "Status code of the response")
+        private final Integer statusCode;
 
-        @Schema(title = "HTTP status code if failed")
-        private final int errorStatusCode;
-
-        @Schema(title = "Error title if failed")
-        private final String errorTitle;
-
-        @Schema(title = "Error code if failed")
-        private final String errorCode;
+        @Schema(title = "Response of the profile addition - error case")
+        private final ErrorResponse errorResponse;
     }
 }
 

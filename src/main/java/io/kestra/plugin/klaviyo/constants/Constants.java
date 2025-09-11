@@ -39,5 +39,10 @@ public class Constants {
     public static final String ID = "id";
     public static final String TEMPLATE = "template";
     public static final String TEMPLATE_URL = "https://a.klaviyo.com/api/templates/";
-
+    public static final String CAMPAIGN_URL = "https://a.klaviyo.com/api/campaigns/";
+    public static final String DEFAULT_REVISION = "2025-07-15";
+    public static final String CAMPAIGN = "campaign";
+    public static final String CAMPAIGN_MESSAGE = "campaign-message";
+    public static final String CAMPAIGN_SEND_JOB = "campaign-send-job";
+    public static final String CAMPAIGN_SEND_URL = "https://a.klaviyo.com/api/campaign-send-jobs";
 }

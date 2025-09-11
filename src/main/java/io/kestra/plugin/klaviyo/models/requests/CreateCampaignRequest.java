@@ -138,8 +138,8 @@ public class CreateCampaignRequest {
     @AllArgsConstructor
     @ToString
     public static class Options {
-        private boolean is_local;
-        private boolean send_past_recipients_immediately;
+        private Boolean is_local;
+        private Boolean send_past_recipients_immediately;
     }
 
     @Getter
@@ -148,7 +148,7 @@ public class CreateCampaignRequest {
     @AllArgsConstructor
     @ToString
     public static class SendOptions {
-        private boolean use_smart_sending;
+        private Boolean use_smart_sending;
     }
 
     @Getter
@@ -157,10 +157,10 @@ public class CreateCampaignRequest {
     @AllArgsConstructor
     @ToString
     public static class TrackingOptions {
-        private boolean add_tracking_params;
+        private Boolean add_tracking_params;
         private List<CustomTrackingParam> custom_tracking_params;
-        private boolean is_tracking_clicks;
-        private boolean is_tracking_opens;
+        private Boolean is_tracking_clicks;
+        private Boolean is_tracking_opens;
     }
 
     @Getter

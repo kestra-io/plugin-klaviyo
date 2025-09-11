@@ -37,6 +37,8 @@ import java.util.List;
         @Example(
             title = "Create a list",
             code = {
+                "privateApiKey: \"pk_xxxxx\"",
+                "revision: \"2025-07-15\"",
                 "name: \"Newsletter Subscribers\""
             }
         )
@@ -56,10 +58,23 @@ public class CreateList extends Task implements RunnableTask<CreateList.Output> 
     private Property<String> revision;
 
     @Schema(
-        title = "Name of the list",
-        description = "Name of the list to create"
+        title = "Attributes of the list",
+        description = "Attributes of the list"
     )
-    private Property<String> name;
+    private Property<Attributes> attributes;
+
+    @SuperBuilder
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(title = "Attributes of the list")
+    public static class Attributes {
+        @Schema(
+            title = "Name of the list",
+            description = "Name of the list to create"
+        )
+        private Property<String> name;
+    }
 
     @Override
     public CreateList.Output run(RunContext runContext) throws Exception {
@@ -68,14 +83,14 @@ public class CreateList extends Task implements RunnableTask<CreateList.Output> 
         HttpClient httpClient = Utils.getHttpClient(runContext);
 
         String renderedPrivateApiKey = runContext.render(privateApiKey).as(String.class).orElse(null);
-        String renderedRevision = runContext.render(revision).as(String.class).orElse("2025-07-15");
-        String renderedName = runContext.render(name).as(String.class).orElse(null);
+        String renderedRevision = runContext.render(revision).as(String.class).orElse(Constants.DEFAULT_REVISION);
+        Attributes renderedAttributes = runContext.render(attributes).as(Attributes.class).orElse(null);
 
         logger.info("Creating list in Klaviyo...");
 
         // attributes
         ListCreateRequest.Attributes attributes = ListCreateRequest.Attributes.builder()
-            .name(renderedName)
+            .name(renderedAttributes.getName().toString())
             .build();
 
         // full request
@@ -96,67 +111,38 @@ public class CreateList extends Task implements RunnableTask<CreateList.Output> 
         int statusCode = httpResponse.getStatus().getCode();
         if (statusCode != 201) {
             ErrorResponse errorResponse = objectMapper.convertValue(httpResponse.getBody(), ErrorResponse.class);
-            List<ErrorResponse.ErrorDetail> errorDetails = errorResponse.getErrors();
-            ErrorResponse.ErrorDetail errorDetail = errorDetails.getFirst();
-            logger.error("Failed to create list in Klaviyo: {}", objectMapper.writeValueAsString(errorDetails));
+            logger.error("Failed to create list in Klaviyo. Status Code: {}, Error: {}", statusCode, objectMapper.writeValueAsString(errorResponse));
             return Output.builder()
                 .status(Constants.ERROR)
-                .errorMessage(errorDetail.getDetail())
-                .errorStatusCode(statusCode)
-                .errorTitle(errorDetail.getTitle())
-                .errorCode(errorDetail.getCode())
+                .statusCode(statusCode)
+                .errorResponse(errorResponse)
                 .build();
         }
 
         // success response
         ListCreateSuccessResponse listCreateSuccessResponse = objectMapper.convertValue(httpResponse.getBody(), ListCreateSuccessResponse.class);
-        ListCreateSuccessResponse.Data dataNode = listCreateSuccessResponse.getData();
-        if (dataNode != null) {
-            ListCreateSuccessResponse.Attributes attrs = dataNode.getAttributes();
-            if (attrs != null) {
-                logger.info("List created successfully in Klaviyo with ID: {}", dataNode.getId());
-                return Output.builder()
-                    .status(Constants.SUCCESS)
-                    .listId(dataNode.getId())
-                    .name(attrs.getName())
-                    .created(attrs.getCreated())
-                    .updated(attrs.getUpdated())
-                    .build();
-            }
-        }
-
-        logger.error("Failed to create list in Klaviyo. Response: {}", objectMapper.writeValueAsString(httpResponse.getBody()));
-        return Output.builder().build();
+        logger.info("List created successfully in Klaviyo with ID: {}", listCreateSuccessResponse.getData().getId());
+        return Output.builder()
+            .status(Constants.SUCCESS)
+            .statusCode(statusCode)
+            .listCreateSuccessResponse(listCreateSuccessResponse)
+            .errorResponse(null)
+            .build();
     }
 
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(title = "Status of the list creation operation")
+        @Schema(title = "Status of the list creation")
         private final String status;
 
-        @Schema(title = "ID of the created list")
-        private final String listId;
+        @Schema(title = "Status code of the response")
+        private final Integer statusCode;
 
-        @Schema(title = "Name of the created list")
-        private final String name;
+        @Schema(title = "Response of the list creation - success case")
+        private final ListCreateSuccessResponse listCreateSuccessResponse;
 
-        @Schema(title = "Creation timestamp of the list")
-        private final String created;
-
-        @Schema(title = "Last updated timestamp of the list")
-        private final String updated;
-
-        @Schema(title = "Error message if list creation failed")
-        private final String errorMessage;
-
-        @Schema(title = "HTTP status code if list creation failed")
-        private final int errorStatusCode;
-
-        @Schema(title = "Error title if list creation failed")
-        private final String errorTitle;
-
-        @Schema(title = "Error code if list creation failed")
-        private final String errorCode;
+        @Schema(title = "Response of the list creation - error case")
+        private final ErrorResponse errorResponse;
     }
 }
