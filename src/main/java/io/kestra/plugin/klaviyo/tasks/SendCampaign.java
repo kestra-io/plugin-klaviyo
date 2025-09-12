@@ -60,7 +60,7 @@ public class SendCampaign extends Task implements RunnableTask<SendCampaign.Outp
 
         // render inputs
         String renderedApiKey = runContext.render(privateApiKey).as(String.class).orElseThrow();
-        String renderedRevision = runContext.render(revision).as(String.class).orElse("2025-07-15");
+        String renderedRevision = runContext.render(revision).as(String.class).orElse(Constants.DEFAULT_REVISION);
         String renderedCampaignId = runContext.render(campaignId).as(String.class).orElseThrow();
 
         // build request body

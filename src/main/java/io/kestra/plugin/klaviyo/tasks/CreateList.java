@@ -89,9 +89,9 @@ public class CreateList extends Task implements RunnableTask<CreateList.Output> 
         logger.info("Creating list in Klaviyo...");
 
         // attributes
-        ListCreateRequest.Attributes attributes = ListCreateRequest.Attributes.builder()
-            .name(renderedAttributes.getName().toString())
-            .build();
+        ListCreateRequest.Attributes attributes = renderedAttributes != null ? ListCreateRequest.Attributes.builder()
+            .name(renderedAttributes.getName() != null ? renderedAttributes.getName().toString() : null)
+            .build() : null;
 
         // full request
         ListCreateRequest listCreateRequest = ListCreateRequest.builder()
