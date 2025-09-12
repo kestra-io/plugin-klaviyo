@@ -118,13 +118,13 @@ public class CreateTemplate extends Task implements RunnableTask<CreateTemplate.
         logger.info("Creating template in Klaviyo with name: {}", renderedAttributes.getName().toString());
 
         // attributes
-        TemplateCreateRequest.Attributes attributes = TemplateCreateRequest.Attributes.builder()
-            .name(renderedAttributes.getName().toString())
-            .editor_type(renderedAttributes.getEditorType().toString())
-            .html(renderedAttributes.getHtml().toString())
-            .text(renderedAttributes.getText().toString())
-            .amp(renderedAttributes.getAmp().toString())
-            .build();
+        TemplateCreateRequest.Attributes attributes = renderedAttributes != null ? TemplateCreateRequest.Attributes.builder()
+            .name(renderedAttributes.getName() != null ? renderedAttributes.getName().toString() : null)
+            .editor_type(renderedAttributes.getEditorType() != null ? renderedAttributes.getEditorType().toString() : null)
+            .html(renderedAttributes.getHtml() != null ? renderedAttributes.getHtml().toString() : null)
+            .text(renderedAttributes.getText() != null ? renderedAttributes.getText().toString() : null)
+            .amp(renderedAttributes.getAmp() != null ? renderedAttributes.getAmp().toString() : null)
+            .build() : null;
 
         TemplateCreateRequest requestPayload = TemplateCreateRequest.builder()
             .data(TemplateCreateRequest.Data.builder()
