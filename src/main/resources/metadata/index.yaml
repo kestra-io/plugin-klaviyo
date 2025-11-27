@@ -1,6 +1,6 @@
 group: io.kestra.plugin.klaviyo
 name: "klaviyo"
-title: "Template"
+title: "Klaviyo"
 description: "Plugin Klaviyo for Kestra"
 body: ""
 videos: []
