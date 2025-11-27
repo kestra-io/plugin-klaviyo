@@ -1,0 +1,8 @@
+group: io.kestra.plugin.klaviyo
+name: "klaviyo"
+title: "Klaviyo"
+description: "Plugin Klaviyo for Kestra"
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
