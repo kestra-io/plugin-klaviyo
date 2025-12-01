@@ -4,8 +4,7 @@ import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.klaviyo.campaign.AbstractCampaignTest;
-import io.kestra.plugin.klaviyo.jobs.GetSendJob;
+import io.kestra.plugin.klaviyo.AbstractKlaviyoTest;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
@@ -16,7 +15,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @KestraTest
-class GetSendJobTest extends AbstractCampaignTest {
+class GetSendJobTest extends AbstractKlaviyoTest {
 
     @Test
     void testFetchOne() throws Exception {

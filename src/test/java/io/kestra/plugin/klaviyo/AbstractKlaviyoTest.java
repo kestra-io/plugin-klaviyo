@@ -1,11 +1,11 @@
-package io.kestra.plugin.klaviyo.campaign;
+package io.kestra.plugin.klaviyo;
 
 import io.kestra.core.runners.RunContextFactory;
 import io.micronaut.runtime.server.EmbeddedServer;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 
-public abstract class AbstractCampaignTest {
+public abstract class AbstractKlaviyoTest {
     @Inject
     protected RunContextFactory runContextFactory;
 
