@@ -1,23 +1,29 @@
-package io.kestra.plugin.klaviyo.campaign;
+package io.kestra.plugin.klaviyo;
 
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.models.tasks.common.FetchType;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.serializers.FileSerde;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.io.*;
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+
+import static org.awaitility.Awaitility.await;
 
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-public abstract class AbstractCampaignTask extends Task {
+public abstract class AbstractKlaviyoTask extends Task {
 
     private static final String API_VERSION = "2025-10-15";
 
@@ -39,6 +45,40 @@ public abstract class AbstractCampaignTask extends Task {
     protected String getApiVersion() {
         return API_VERSION;
     }
+
+    protected Output applyFetchStrategy(FetchType rFetchType, List<Map<String, Object>> data, RunContext runContext) throws IOException {
+
+        Output.OutputBuilder output = Output.builder();
+
+        switch (rFetchType) {
+            case FETCH_ONE -> {
+                Map<String, Object> result = data.isEmpty() ? null : data.getFirst();
+                output.row(result);
+            }
+            case STORE -> {
+                File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
+                try (OutputStream fileOutputStream = new BufferedOutputStream(
+                    new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
+                    for (Map<String, Object> campaign : data) {
+                        FileSerde.write(fileOutputStream, campaign);
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                output.uri(runContext.storage().putFile(tempFile));
+            }
+            case FETCH -> output.rows(data);
+            case NONE -> {
+            }
+        }
+
+        return output.build();
+    }
+
+    protected void induceDelay() {
+        await().pollDelay(Duration.ofSeconds(1)).until(() -> true);
+    }
+
 
     @Builder
     @Getter

@@ -10,8 +10,8 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.serializers.JacksonMapper;
+import io.kestra.plugin.klaviyo.AbstractKlaviyoTask;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
@@ -21,10 +21,6 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +53,7 @@ import java.util.Map;
             """
     )
 })
-public class Get extends AbstractCampaignTask implements RunnableTask<AbstractCampaignTask.Output> {
+public class Get extends AbstractKlaviyoTask implements RunnableTask<AbstractKlaviyoTask.Output> {
 
     @Schema(title = "List of campaign IDs", description = "Campaign IDs to retrieve")
     @NotNull
@@ -72,7 +68,6 @@ public class Get extends AbstractCampaignTask implements RunnableTask<AbstractCa
         List<String> rCampaignIds = runContext.render(this.campaignIds).asList(String.class);
         FetchType rFetchType = runContext.render(this.fetchType).as(FetchType.class).orElse(FetchType.FETCH);
 
-        Output.OutputBuilder output = Output.builder();
         long size = 0L;
         List<Map<String, Object>> allCampaigns = new ArrayList<>();
 
@@ -81,6 +76,8 @@ public class Get extends AbstractCampaignTask implements RunnableTask<AbstractCa
             .build()) {
 
             for (String campaignId : rCampaignIds) {
+                induceDelay();
+
                 String url = rBaseUrl + "/campaigns/" + campaignId;
 
                 HttpRequest request = HttpRequest.builder()
@@ -111,30 +108,15 @@ public class Get extends AbstractCampaignTask implements RunnableTask<AbstractCa
                 }
             }
 
-            switch (rFetchType) {
-                case FETCH_ONE -> {
-                    Map<String, Object> result = allCampaigns.isEmpty() ? null : allCampaigns.getFirst();
-                    output.row(result);
-                }
-                case STORE -> {
-                    File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-                    try (OutputStream fileOutputStream = new BufferedOutputStream(
-                        new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
-                        for (Map<String, Object> campaign : allCampaigns) {
-                            FileSerde.write(fileOutputStream, campaign);
-                        }
-                    }
-                    output.uri(runContext.storage().putFile(tempFile));
-                }
-                case FETCH -> output.rows(allCampaigns);
-                case NONE -> {
-                }
-            }
-
-            output.size(size);
+            Output output = applyFetchStrategy(rFetchType, allCampaigns, runContext);
             logger.info("Successfully retrieved {} campaign(s)", size);
 
-            return output.build();
+            return Output.builder()
+                .size(size)
+                .row(output.getRow())
+                .rows(output.getRows())
+                .uri(output.getUri())
+                .build();
         }
     }
 }

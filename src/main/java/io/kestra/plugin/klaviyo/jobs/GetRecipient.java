@@ -1,4 +1,4 @@
-package io.kestra.plugin.klaviyo.campaign.messages;
+package io.kestra.plugin.klaviyo.jobs;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.kestra.core.http.HttpRequest;
@@ -10,9 +10,8 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.serializers.JacksonMapper;
-import io.kestra.plugin.klaviyo.campaign.AbstractCampaignTask;
+import io.kestra.plugin.klaviyo.AbstractKlaviyoTask;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
@@ -22,10 +21,6 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,46 +32,46 @@ import java.util.Map;
 @ToString
 @EqualsAndHashCode
 @Schema(
-    title = "Retrieve campaigns for campaign messages",
-    description = "Return the related campaigns for given campaign message IDs"
+    title = "Retrieve campaign recipient estimation jobs from Klaviyo",
+    description = "Retrieve the status of recipient estimation jobs triggered with the Create Campaign Recipient Estimation Job endpoint"
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Get campaign for a single message",
+            title = "Get a single recipient estimation job",
             full = true,
             code = """
-                id: klaviyo_get_campaign_for_message
+                id: klaviyo_get_recipient_job
                 namespace: company.team
 
                 tasks:
-                  - id: get_campaign
-                    type: io.kestra.plugin.klaviyo.campaign.messages.GetCampaign
+                  - id: get_recipient_job
+                    type: io.kestra.plugin.klaviyo.jobs.GetRecipient
                     apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
-                    messageIds:
-                      - "message_id_1"
+                    jobIds:
+                      - "job_id_1"
                     fetchType: FETCH_ONE
                 """
         ),
         @Example(
-            title = "Get campaigns for multiple messages",
+            title = "Get multiple recipient estimation jobs",
             code = """
-                - id: get_campaigns
-                  type: io.kestra.plugin.klaviyo.campaign.messages.GetCampaign
+                - id: get_recipient_jobs
+                  type: io.kestra.plugin.klaviyo.jobs.GetRecipient
                   apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
-                  messageIds:
-                    - "message_id_1"
-                    - "message_id_2"
+                  jobIds:
+                    - "job_id_1"
+                    - "job_id_2"
                   fetchType: FETCH
                 """
         )
     }
 )
-public class GetCampaign extends AbstractCampaignTask implements RunnableTask<AbstractCampaignTask.Output> {
+public class GetRecipient extends AbstractKlaviyoTask implements RunnableTask<AbstractKlaviyoTask.Output> {
 
-    @Schema(title = "List of message IDs", description = "Campaign message IDs for which to retrieve related campaigns")
+    @Schema(title = "List of recipient estimation job IDs", description = "IDs of the campaigns to get recipient estimation job status")
     @NotNull
-    protected Property<List<String>> messageIds;
+    protected Property<List<String>> jobIds;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -84,19 +79,20 @@ public class GetCampaign extends AbstractCampaignTask implements RunnableTask<Ab
 
         String rApiKey = runContext.render(this.apiKey).as(String.class).orElseThrow();
         String rBaseUrl = runContext.render(this.baseUrl).as(String.class).orElseThrow();
-        List<String> rMessageIds = runContext.render(this.messageIds).asList(String.class);
+        List<String> rJobIds = runContext.render(this.jobIds).asList(String.class);
         FetchType rFetchType = runContext.render(this.fetchType).as(FetchType.class).orElse(FetchType.FETCH);
 
-        Output.OutputBuilder output = Output.builder();
         long size = 0L;
-        List<Map<String, Object>> allCampaigns = new ArrayList<>();
+        List<Map<String, Object>> allJobs = new ArrayList<>();
 
         try (HttpClient httpClient = HttpClient.builder()
             .runContext(runContext)
             .build()) {
 
-            for (String messageId : rMessageIds) {
-                String url = rBaseUrl + "/campaign-messages/" + messageId + "/campaign";
+            for (String jobId : rJobIds) {
+                induceDelay();
+
+                String url = rBaseUrl + "/campaign-recipient-estimation-jobs/" + jobId;
 
                 HttpRequest request = HttpRequest.builder()
                     .uri(URI.create(url))
@@ -111,7 +107,7 @@ public class GetCampaign extends AbstractCampaignTask implements RunnableTask<Ab
 
                 if (response.getStatus().getCode() != 200) {
                     throw new RuntimeException(
-                        "Failed to retrieve campaign for message " + messageId + ": " +
+                        "Failed to retrieve recipient estimation job " + jobId + ": " +
                             response.getStatus().getCode() + " - " + response.getBody());
                 }
 
@@ -120,37 +116,21 @@ public class GetCampaign extends AbstractCampaignTask implements RunnableTask<Ab
 
                 if (dataNode != null) {
                     @SuppressWarnings("unchecked")
-                    Map<String, Object> campaign = JacksonMapper.ofJson().convertValue(dataNode, Map.class);
-                    allCampaigns.add(campaign);
+                    Map<String, Object> job = JacksonMapper.ofJson().convertValue(dataNode, Map.class);
+                    allJobs.add(job);
                     size++;
                 }
             }
 
-            switch (rFetchType) {
-                case FETCH_ONE -> {
-                    Map<String, Object> result = allCampaigns.isEmpty() ? null : allCampaigns.getFirst();
-                    output.row(result);
-                }
-                case STORE -> {
-                    File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-                    try (OutputStream fileOutputStream = new BufferedOutputStream(
-                        new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
-                        for (Map<String, Object> campaign : allCampaigns) {
-                            FileSerde.write(fileOutputStream, campaign);
-                        }
-                    }
-                    output.uri(runContext.storage().putFile(tempFile));
-                }
-                case FETCH -> output.rows(allCampaigns);
-                case NONE -> {
-                }
-            }
+            Output output = applyFetchStrategy(rFetchType, allJobs, runContext);
+            logger.info("Successfully retrieved {} recipient estimation job(s)", size);
 
-            output.size(size);
-            logger.info("Successfully retrieved {} campaign(s) for message(s)", size);
-
-            return output.build();
+            return Output.builder()
+                .size(size)
+                .row(output.getRow())
+                .rows(output.getRows())
+                .uri(output.getUri())
+                .build();
         }
     }
-
 }

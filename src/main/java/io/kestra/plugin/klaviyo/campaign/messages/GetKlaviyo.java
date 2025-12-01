@@ -1,4 +1,4 @@
-package io.kestra.plugin.klaviyo.campaign.jobs;
+package io.kestra.plugin.klaviyo.campaign.messages;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.kestra.core.http.HttpRequest;
@@ -10,9 +10,8 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.serializers.JacksonMapper;
-import io.kestra.plugin.klaviyo.campaign.AbstractCampaignTask;
+import io.kestra.plugin.klaviyo.AbstractKlaviyoTask;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
@@ -22,10 +21,6 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,46 +32,46 @@ import java.util.Map;
 @ToString
 @EqualsAndHashCode
 @Schema(
-    title = "Retrieve campaign send jobs from Klaviyo",
-    description = "Get campaign send jobs by their IDs"
+    title = "Retrieve campaigns for campaign messages",
+    description = "Return the related campaigns for given campaign message IDs"
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Get a single campaign send job",
+            title = "Get campaign for a single message",
             full = true,
             code = """
-                id: klaviyo_get_send_job
+                id: klaviyo_get_campaign_for_message
                 namespace: company.team
 
                 tasks:
-                  - id: get_send_job
-                    type: io.kestra.plugin.klaviyo.campaign.jobs.GetSendJob
+                  - id: get_campaign
+                    type: io.kestra.plugin.klaviyo.campaign.messages.GetCampaign
                     apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
-                    jobIds:
-                      - "job_id_1"
+                    messageIds:
+                      - "message_id_1"
                     fetchType: FETCH_ONE
                 """
         ),
         @Example(
-            title = "Get multiple campaign send jobs",
+            title = "Get campaigns for multiple messages",
             code = """
-                - id: get_send_jobs
-                  type: io.kestra.plugin.klaviyo.campaign.jobs.GetSendJob
+                - id: get_campaigns
+                  type: io.kestra.plugin.klaviyo.campaign.messages.GetCampaign
                   apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
-                  jobIds:
-                    - "job_id_1"
-                    - "job_id_2"
+                  messageIds:
+                    - "message_id_1"
+                    - "message_id_2"
                   fetchType: FETCH
                 """
         )
     }
 )
-public class GetSendJob extends AbstractCampaignTask implements RunnableTask<AbstractCampaignTask.Output> {
+public class GetKlaviyo extends AbstractKlaviyoTask implements RunnableTask<AbstractKlaviyoTask.Output> {
 
-    @Schema(title = "List of send job IDs", description = "Campaign send job IDs to retrieve")
+    @Schema(title = "List of message IDs", description = "Campaign message IDs for which to retrieve related campaigns")
     @NotNull
-    protected Property<List<String>> jobIds;
+    protected Property<List<String>> messageIds;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -84,19 +79,20 @@ public class GetSendJob extends AbstractCampaignTask implements RunnableTask<Abs
 
         String rApiKey = runContext.render(this.apiKey).as(String.class).orElseThrow();
         String rBaseUrl = runContext.render(this.baseUrl).as(String.class).orElseThrow();
-        List<String> rJobIds = runContext.render(this.jobIds).asList(String.class);
+        List<String> rMessageIds = runContext.render(this.messageIds).asList(String.class);
         FetchType rFetchType = runContext.render(this.fetchType).as(FetchType.class).orElse(FetchType.FETCH);
 
-        Output.OutputBuilder output = Output.builder();
         long size = 0L;
-        List<Map<String, Object>> allJobs = new ArrayList<>();
+        List<Map<String, Object>> allCampaigns = new ArrayList<>();
 
         try (HttpClient httpClient = HttpClient.builder()
             .runContext(runContext)
             .build()) {
 
-            for (String jobId : rJobIds) {
-                String url = rBaseUrl + "/campaign-send-jobs/" + jobId;
+            for (String messageId : rMessageIds) {
+                induceDelay();
+
+                String url = rBaseUrl + "/campaign-messages/" + messageId + "/campaign";
 
                 HttpRequest request = HttpRequest.builder()
                     .uri(URI.create(url))
@@ -111,7 +107,7 @@ public class GetSendJob extends AbstractCampaignTask implements RunnableTask<Abs
 
                 if (response.getStatus().getCode() != 200) {
                     throw new RuntimeException(
-                        "Failed to retrieve send job " + jobId + ": " +
+                        "Failed to retrieve campaign for message " + messageId + ": " +
                             response.getStatus().getCode() + " - " + response.getBody());
                 }
 
@@ -120,36 +116,22 @@ public class GetSendJob extends AbstractCampaignTask implements RunnableTask<Abs
 
                 if (dataNode != null) {
                     @SuppressWarnings("unchecked")
-                    Map<String, Object> job = JacksonMapper.ofJson().convertValue(dataNode, Map.class);
-                    allJobs.add(job);
+                    Map<String, Object> campaign = JacksonMapper.ofJson().convertValue(dataNode, Map.class);
+                    allCampaigns.add(campaign);
                     size++;
                 }
             }
 
-            switch (rFetchType) {
-                case FETCH_ONE -> {
-                    Map<String, Object> result = allJobs.isEmpty() ? null : allJobs.getFirst();
-                    output.row(result);
-                }
-                case STORE -> {
-                    File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-                    try (OutputStream fileOutputStream = new BufferedOutputStream(
-                        new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
-                        for (Map<String, Object> job : allJobs) {
-                            FileSerde.write(fileOutputStream, job);
-                        }
-                    }
-                    output.uri(runContext.storage().putFile(tempFile));
-                }
-                case FETCH -> output.rows(allJobs);
-                case NONE -> {
-                }
-            }
+            Output output = applyFetchStrategy(rFetchType, allCampaigns, runContext);
+            logger.info("Successfully retrieved {} campaign(s) for message(s)", size);
 
-            output.size(size);
-            logger.info("Successfully retrieved {} send job(s)", size);
-
-            return output.build();
+            return Output.builder()
+                .size(size)
+                .row(output.getRow())
+                .rows(output.getRows())
+                .uri(output.getUri())
+                .build();
         }
     }
+
 }

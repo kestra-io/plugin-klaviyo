@@ -1,4 +1,4 @@
-package io.kestra.plugin.klaviyo.campaign.jobs;
+package io.kestra.plugin.klaviyo.jobs;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.kestra.core.http.HttpRequest;
@@ -10,9 +10,8 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.serializers.JacksonMapper;
-import io.kestra.plugin.klaviyo.campaign.AbstractCampaignTask;
+import io.kestra.plugin.klaviyo.AbstractKlaviyoTask;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
@@ -22,10 +21,6 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,21 +32,21 @@ import java.util.Map;
 @ToString
 @EqualsAndHashCode
 @Schema(
-    title = "Retrieve campaign recipient estimation jobs from Klaviyo",
-    description = "Retrieve the status of recipient estimation jobs triggered with the Create Campaign Recipient Estimation Job endpoint"
+    title = "Retrieve campaign send jobs from Klaviyo",
+    description = "Get campaign send jobs by their IDs"
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Get a single recipient estimation job",
+            title = "Get a single campaign send job",
             full = true,
             code = """
-                id: klaviyo_get_recipient_job
+                id: klaviyo_get_send_job
                 namespace: company.team
 
                 tasks:
-                  - id: get_recipient_job
-                    type: io.kestra.plugin.klaviyo.campaign.jobs.GetRecipient
+                  - id: get_send_job
+                    type: io.kestra.plugin.klaviyo.jobs.GetSendJob
                     apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
                     jobIds:
                       - "job_id_1"
@@ -59,10 +54,10 @@ import java.util.Map;
                 """
         ),
         @Example(
-            title = "Get multiple recipient estimation jobs",
+            title = "Get multiple campaign send jobs",
             code = """
-                - id: get_recipient_jobs
-                  type: io.kestra.plugin.klaviyo.campaign.jobs.GetRecipient
+                - id: get_send_jobs
+                  type: io.kestra.plugin.klaviyo.jobs.GetSendJob
                   apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
                   jobIds:
                     - "job_id_1"
@@ -72,9 +67,9 @@ import java.util.Map;
         )
     }
 )
-public class GetRecipient extends AbstractCampaignTask implements RunnableTask<AbstractCampaignTask.Output> {
+public class GetSendJob extends AbstractKlaviyoTask implements RunnableTask<AbstractKlaviyoTask.Output> {
 
-    @Schema(title = "List of recipient estimation job IDs", description = "IDs of the campaigns to get recipient estimation job status")
+    @Schema(title = "List of send job IDs", description = "Campaign send job IDs to retrieve")
     @NotNull
     protected Property<List<String>> jobIds;
 
@@ -87,7 +82,6 @@ public class GetRecipient extends AbstractCampaignTask implements RunnableTask<A
         List<String> rJobIds = runContext.render(this.jobIds).asList(String.class);
         FetchType rFetchType = runContext.render(this.fetchType).as(FetchType.class).orElse(FetchType.FETCH);
 
-        Output.OutputBuilder output = Output.builder();
         long size = 0L;
         List<Map<String, Object>> allJobs = new ArrayList<>();
 
@@ -96,7 +90,9 @@ public class GetRecipient extends AbstractCampaignTask implements RunnableTask<A
             .build()) {
 
             for (String jobId : rJobIds) {
-                String url = rBaseUrl + "/campaign-recipient-estimation-jobs/" + jobId;
+                induceDelay();
+
+                String url = rBaseUrl + "/campaign-send-jobs/" + jobId;
 
                 HttpRequest request = HttpRequest.builder()
                     .uri(URI.create(url))
@@ -108,10 +104,9 @@ public class GetRecipient extends AbstractCampaignTask implements RunnableTask<A
                     .build();
 
                 HttpResponse<String> response = httpClient.request(request, String.class);
-
                 if (response.getStatus().getCode() != 200) {
                     throw new RuntimeException(
-                        "Failed to retrieve recipient estimation job " + jobId + ": " +
+                        "Failed to retrieve send job " + jobId + ": " +
                             response.getStatus().getCode() + " - " + response.getBody());
                 }
 
@@ -126,30 +121,15 @@ public class GetRecipient extends AbstractCampaignTask implements RunnableTask<A
                 }
             }
 
-            switch (rFetchType) {
-                case FETCH_ONE -> {
-                    Map<String, Object> result = allJobs.isEmpty() ? null : allJobs.getFirst();
-                    output.row(result);
-                }
-                case STORE -> {
-                    File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-                    try (OutputStream fileOutputStream = new BufferedOutputStream(
-                        new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
-                        for (Map<String, Object> job : allJobs) {
-                            FileSerde.write(fileOutputStream, job);
-                        }
-                    }
-                    output.uri(runContext.storage().putFile(tempFile));
-                }
-                case FETCH -> output.rows(allJobs);
-                case NONE -> {
-                }
-            }
+            Output output = applyFetchStrategy(rFetchType, allJobs, runContext);
+            logger.info("Successfully retrieved {} send job(s)", size);
 
-            output.size(size);
-            logger.info("Successfully retrieved {} recipient estimation job(s)", size);
-
-            return output.build();
+            return Output.builder()
+                .size(size)
+                .row(output.getRow())
+                .rows(output.getRows())
+                .uri(output.getUri())
+                .build();
         }
     }
 }

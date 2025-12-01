@@ -1,4 +1,4 @@
-package io.kestra.plugin.klaviyo.campaign;
+package io.kestra.plugin.klaviyo;
 
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Controller;
