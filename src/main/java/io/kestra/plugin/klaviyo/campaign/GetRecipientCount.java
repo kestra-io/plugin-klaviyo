@@ -35,36 +35,38 @@ import java.util.Map;
     title = "Retrieve campaign recipient estimations from Klaviyo",
     description = "Returns the estimated recipient count for the given campaign IDs"
 )
-@Plugin(examples = {
-    @Example(
-        title = "Get recipient estimation for a single campaign",
-        full = true,
-        code = """
-            id: klaviyo_get_recipient_estimation
-            namespace: company.team
+@Plugin(
+    examples = {
+        @Example(
+            title = "Get recipient estimation for a single campaign",
+            full = true,
+            code = """
+                id: klaviyo_get_recipient_estimation
+                namespace: company.team
 
-            tasks:
-              - id: get_estimation
-                type: io.kestra.plugin.klaviyo.campaign.GetRecipientCount
-                apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
-                campaignIds:
-                  - "campaign_id_1"
-                fetchType: FETCH_ONE
-            """
-    ),
-    @Example(
-        title = "Get recipient estimations for multiple campaigns",
-        code = """
-            - id: get_estimations
-              type: io.kestra.plugin.klaviyo.campaign.GetRecipientCount
-              apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
-              campaignIds:
-                - "campaign_id_1"
-                - "campaign_id_2"
-              fetchType: FETCH
-            """
-    )
-})
+                tasks:
+                  - id: get_estimation
+                    type: io.kestra.plugin.klaviyo.campaign.GetRecipientCount
+                    apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
+                    campaignIds:
+                      - "campaign_id_1"
+                    fetchType: FETCH_ONE
+                """
+        ),
+        @Example(
+            title = "Get recipient estimations for multiple campaigns",
+            code = """
+                - id: get_estimations
+                  type: io.kestra.plugin.klaviyo.campaign.GetRecipientCount
+                  apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
+                  campaignIds:
+                    - "campaign_id_1"
+                    - "campaign_id_2"
+                  fetchType: FETCH
+                """
+        )
+    }
+)
 public class GetRecipientCount extends AbstractKlaviyoTask implements RunnableTask<AbstractKlaviyoTask.Output> {
 
     @Schema(title = "List of campaign IDs", description = "Campaign IDs for which to get the estimated number of recipients")

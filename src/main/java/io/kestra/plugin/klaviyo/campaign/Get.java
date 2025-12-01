@@ -35,24 +35,26 @@ import java.util.Map;
     title = "Retrieve campaigns from Klaviyo",
     description = "Returns the campaign details for the given campaign IDs"
 )
-@Plugin(examples = {
-    @Example(
-        title = "Get a single campaign",
-        full = true,
-        code = """
-            id: klaviyo_get_campaign
-            namespace: company.team
+@Plugin(
+    examples = {
+        @Example(
+            title = "Get a single campaign",
+            full = true,
+            code = """
+                id: klaviyo_get_campaign
+                namespace: company.team
 
-            tasks:
-              - id: get_campaign
-                type: io.kestra.plugin.klaviyo.campaign.Get
-                apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
-                campaignIds:
-                  - "campaign_id_1"
-                fetchType: FETCH_ONE
-            """
-    )
-})
+                tasks:
+                  - id: get_campaign
+                    type: io.kestra.plugin.klaviyo.campaign.Get
+                    apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
+                    campaignIds:
+                      - "campaign_id_1"
+                    fetchType: FETCH_ONE
+                """
+        )
+    }
+)
 public class Get extends AbstractKlaviyoTask implements RunnableTask<AbstractKlaviyoTask.Output> {
 
     @Schema(title = "List of campaign IDs", description = "Campaign IDs to retrieve")

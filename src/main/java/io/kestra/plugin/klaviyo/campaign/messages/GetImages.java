@@ -35,36 +35,38 @@ import java.util.Map;
     title = "Retrieve images for campaign messages with channel mobile_push",
     description = "Returns the related images for the given campaign message IDs whose channel is mobile_push"
 )
-@Plugin(examples = {
-    @Example(
-        title = "Get image for a single message",
-        full = true,
-        code = """
-            id: klaviyo_get_image_for_message
-            namespace: company.team
+@Plugin(
+    examples = {
+        @Example(
+            title = "Get image for a single message",
+            full = true,
+            code = """
+                id: klaviyo_get_image_for_message
+                namespace: company.team
 
-            tasks:
-              - id: get_image
-                type: io.kestra.plugin.klaviyo.campaign.messages.GetImages
-                apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
-                messageIds:
-                  - "message_id_1"
-                fetchType: FETCH_ONE
-            """
-    ),
-    @Example(
-        title = "Get images for multiple messages",
-        code = """
-            - id: get_images
-              type: io.kestra.plugin.klaviyo.campaign.messages.GetImages
-              apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
-              messageIds:
-                - "message_id_1"
-                - "message_id_2"
-              fetchType: FETCH
-            """
-    )
-})
+                tasks:
+                  - id: get_image
+                    type: io.kestra.plugin.klaviyo.campaign.messages.GetImages
+                    apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
+                    messageIds:
+                      - "message_id_1"
+                    fetchType: FETCH_ONE
+                """
+        ),
+        @Example(
+            title = "Get images for multiple messages",
+            code = """
+                - id: get_images
+                  type: io.kestra.plugin.klaviyo.campaign.messages.GetImages
+                  apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
+                  messageIds:
+                    - "message_id_1"
+                    - "message_id_2"
+                  fetchType: FETCH
+                """
+        )
+    }
+)
 public class GetImages extends AbstractKlaviyoTask implements RunnableTask<AbstractKlaviyoTask.Output> {
 
     @Schema(title = "List of message IDs with mobile_push channel", description = "Campaign message IDs for which to retrieve related images")
