@@ -1,0 +1,8 @@
+group: io.kestra.plugin.klaviyo.jobs
+name: "jobs"
+title: "Campaign Jobs"
+description: "Tasks for managing Klaviyo campaign jobs"
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
