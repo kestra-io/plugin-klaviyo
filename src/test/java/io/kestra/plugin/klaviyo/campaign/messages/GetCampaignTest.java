@@ -22,14 +22,14 @@ class GetCampaignTest extends AbstractCampaignTest {
         RunContext runContext = runContextFactory.of();
         Logger logger = runContext.logger();
 
-        GetKlaviyo task = GetKlaviyo.builder()
+        GetCampaign task = GetCampaign.builder()
             .apiKey(Property.ofValue("test-api-key"))
             .baseUrl(Property.ofValue(server.getURI() + "/api"))
             .messageIds(Property.ofValue(List.of("msg-001")))
             .fetchType(Property.ofValue(FetchType.FETCH_ONE))
             .build();
 
-        GetKlaviyo.Output output = task.run(runContext);
+        GetCampaign.Output output = task.run(runContext);
 
         assertThat(output.getSize(), is(1L));
         assertThat(output.getRow(), is(notNullValue()));
@@ -47,14 +47,14 @@ class GetCampaignTest extends AbstractCampaignTest {
         RunContext runContext = runContextFactory.of();
         Logger logger = runContext.logger();
 
-        GetKlaviyo task = GetKlaviyo.builder()
+        GetCampaign task = GetCampaign.builder()
             .apiKey(Property.ofValue("test-api-key"))
             .baseUrl(Property.ofValue(server.getURI() + "/api"))
             .messageIds(Property.ofValue(List.of("msg-001", "msg-002")))
             .fetchType(Property.ofValue(FetchType.FETCH))
             .build();
 
-        GetKlaviyo.Output output = task.run(runContext);
+        GetCampaign.Output output = task.run(runContext);
 
         assertThat(output.getSize(), is(2L));
         assertThat(output.getRows(), is(notNullValue()));

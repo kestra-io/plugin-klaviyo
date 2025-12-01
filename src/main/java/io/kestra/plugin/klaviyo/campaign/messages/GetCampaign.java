@@ -67,7 +67,7 @@ import java.util.Map;
         )
     }
 )
-public class GetKlaviyo extends AbstractKlaviyoTask implements RunnableTask<AbstractKlaviyoTask.Output> {
+public class GetCampaign extends AbstractKlaviyoTask implements RunnableTask<AbstractKlaviyoTask.Output> {
 
     @Schema(title = "List of message IDs", description = "Campaign message IDs for which to retrieve related campaigns")
     @NotNull
