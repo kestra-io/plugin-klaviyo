@@ -1,0 +1,8 @@
+group: io.kestra.plugin.klaviyo.campaign.messages
+name: "messages"
+title: "Campaign Messages"
+description: "Tasks for managing Klaviyo campaign messages"
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
