@@ -1,8 +1,8 @@
 group: io.kestra.plugin.klaviyo
 name: "klaviyo"
 title: "Klaviyo"
-description: "Plugin Klaviyo for Kestra"
-body: ""
+description: "Tasks that interact with Klaviyo campaign APIs."
+body: "Use your Klaviyo `apiKey` and base URL to retrieve campaigns, their jobs, and message assets, applying fetch strategies to return single items, lists, or stored files for further segmentation or reporting."
 videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"

@@ -1,8 +1,8 @@
 group: io.kestra.plugin.klaviyo.jobs
 name: "jobs"
 title: "Campaign Jobs"
-description: "Tasks for managing Klaviyo campaign jobs"
-body: ""
+description: "Tasks that check Klaviyo campaign job status and recipients."
+body: "Set your `apiKey` with job or recipient IDs to poll campaign send jobs and fetch recipient batches, returning job states, errors, and payloads so you can monitor delivery pipelines."
 videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"
