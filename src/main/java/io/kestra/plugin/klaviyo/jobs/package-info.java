@@ -1,8 +1,6 @@
 @PluginSubGroup(
     title = "Campaign Jobs",
-    description = "Tasks for managing Klaviyo campaign recipient estimation jobs and send jobs.",
-    categories = PluginSubGroup.PluginCategory.TOOL,
-    categories = {
+    description = "Tasks for managing Klaviyo campaign recipient estimation jobs and send jobs.",categories = {
         PluginSubGroup.PluginCategory.AI,
         PluginSubGroup.PluginCategory.BUSINESS
     }
