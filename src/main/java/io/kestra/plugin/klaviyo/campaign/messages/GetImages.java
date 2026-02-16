@@ -32,8 +32,8 @@ import java.util.Map;
 @ToString
 @EqualsAndHashCode
 @Schema(
-    title = "Retrieve images for campaign messages with channel mobile_push",
-    description = "Returns the related images for the given campaign message IDs whose channel is mobile_push"
+    title = "Fetch mobile push images",
+    description = "Retrieves images for campaign messages whose channel is `mobile_push`; fetchType (default FETCH) controls row vs. file output and the task waits ~1s between API calls."
 )
 @Plugin(
     examples = {
@@ -69,7 +69,7 @@ import java.util.Map;
 )
 public class GetImages extends AbstractKlaviyoTask implements RunnableTask<AbstractKlaviyoTask.Output> {
 
-    @Schema(title = "List of message IDs with mobile_push channel", description = "Campaign message IDs for which to retrieve related images")
+    @Schema(title = "Message IDs", description = "Campaign message IDs with channel `mobile_push`; order is preserved.")
     @NotNull
     protected Property<List<String>> messageIds;
 

@@ -32,8 +32,8 @@ import java.util.Map;
 @ToString
 @EqualsAndHashCode
 @Schema(
-    title = "Retrieve campaign send jobs from Klaviyo",
-    description = "Get campaign send jobs by their IDs"
+    title = "Fetch campaign send jobs",
+    description = "Retrieves campaign send jobs by ID; fetchType (default FETCH) controls row vs. file output and the task waits ~1s between API calls."
 )
 @Plugin(
     examples = {
@@ -69,7 +69,7 @@ import java.util.Map;
 )
 public class GetSendJob extends AbstractKlaviyoTask implements RunnableTask<AbstractKlaviyoTask.Output> {
 
-    @Schema(title = "List of send job IDs", description = "Campaign send job IDs to retrieve")
+    @Schema(title = "Job IDs", description = "Campaign send job IDs to fetch; order is preserved.")
     @NotNull
     protected Property<List<String>> jobIds;
 

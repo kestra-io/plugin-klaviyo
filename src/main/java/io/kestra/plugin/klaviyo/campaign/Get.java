@@ -32,8 +32,8 @@ import java.util.Map;
 @ToString
 @EqualsAndHashCode
 @Schema(
-    title = "Retrieve campaigns from Klaviyo",
-    description = "Returns the campaign details for the given campaign IDs"
+    title = "Fetch campaigns by ID",
+    description = "Retrieves Klaviyo campaigns by ID, using fetchType (default FETCH) to control whether one row, all rows, or a stored file is produced; waits ~1s between API calls."
 )
 @Plugin(
     examples = {
@@ -57,7 +57,7 @@ import java.util.Map;
 )
 public class Get extends AbstractKlaviyoTask implements RunnableTask<AbstractKlaviyoTask.Output> {
 
-    @Schema(title = "List of campaign IDs", description = "Campaign IDs to retrieve")
+    @Schema(title = "Campaign IDs", description = "Klaviyo campaign IDs to fetch; order is preserved in the output.")
     @NotNull
     protected Property<List<String>> campaignIds;
 

@@ -32,8 +32,8 @@ import java.util.Map;
 @ToString
 @EqualsAndHashCode
 @Schema(
-    title = "Retrieve campaigns for campaign messages",
-    description = "Return the related campaigns for given campaign message IDs"
+    title = "Fetch campaigns for messages",
+    description = "Retrieves the campaign linked to each campaign message ID; fetchType (default FETCH) governs row vs. file output and the task waits ~1s between API calls."
 )
 @Plugin(
     examples = {
@@ -69,7 +69,7 @@ import java.util.Map;
 )
 public class GetCampaign extends AbstractKlaviyoTask implements RunnableTask<AbstractKlaviyoTask.Output> {
 
-    @Schema(title = "List of message IDs", description = "Campaign message IDs for which to retrieve related campaigns")
+    @Schema(title = "Message IDs", description = "Campaign message IDs used to look up their parent campaigns; order is preserved.")
     @NotNull
     protected Property<List<String>> messageIds;
 
