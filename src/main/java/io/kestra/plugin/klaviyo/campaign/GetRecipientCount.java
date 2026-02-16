@@ -32,8 +32,8 @@ import java.util.Map;
 @ToString
 @EqualsAndHashCode
 @Schema(
-    title = "Retrieve campaign recipient estimations from Klaviyo",
-    description = "Returns the estimated recipient count for the given campaign IDs"
+    title = "Estimate recipients for campaigns",
+    description = "Retrieves Klaviyo recipient estimations for the provided campaign IDs; fetchType (default FETCH) controls row vs. file output and the task waits ~1s between API calls."
 )
 @Plugin(
     examples = {
@@ -69,7 +69,7 @@ import java.util.Map;
 )
 public class GetRecipientCount extends AbstractKlaviyoTask implements RunnableTask<AbstractKlaviyoTask.Output> {
 
-    @Schema(title = "List of campaign IDs", description = "Campaign IDs for which to get the estimated number of recipients")
+    @Schema(title = "Campaign IDs", description = "Klaviyo campaign IDs to estimate recipients for; preserves input order.")
     @NotNull
     protected Property<List<String>> campaignIds;
 

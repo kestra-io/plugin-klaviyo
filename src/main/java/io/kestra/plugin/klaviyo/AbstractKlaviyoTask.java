@@ -27,18 +27,15 @@ public abstract class AbstractKlaviyoTask extends Task {
 
     private static final String API_VERSION = "2025-10-15";
 
-    @Schema(title = "Klaviyo private API Key", description = "The API key for authenticating with Klaviyo.")
+    @Schema(title = "Klaviyo private API Key", description = "Klaviyo Private API Key sent as `Klaviyo-API-Key`; keep secret.")
     @NotNull
     protected Property<String> apiKey;
 
-    @Schema(title = "Base URL", description = "The base URL for the Klaviyo API")
+    @Schema(title = "Base URL", description = "Klaviyo API base URL; defaults to `https://a.klaviyo.com/api`.")
     @Builder.Default
     protected Property<String> baseUrl = Property.ofValue("https://a.klaviyo.com/api");
 
-    @Schema(title = "The way you want to store the data", description = "FETCH_ONE output the first row, "
-        + "FETCH output all rows, "
-        + "STORE store all rows in a file, "
-        + "NONE do nothing")
+    @Schema(title = "Fetch strategy", description = "Controls output: FETCH_ONE first row, FETCH all rows (default), STORE writes all rows to internal storage, NONE skips output.")
     @Builder.Default
     protected Property<FetchType> fetchType = Property.ofValue(FetchType.FETCH);
 
@@ -83,16 +80,16 @@ public abstract class AbstractKlaviyoTask extends Task {
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(title = "The size of the rows fetched")
+        @Schema(title = "Fetched row count")
         private final Long size;
 
-        @Schema(title = "The row data")
+        @Schema(title = "Single row data")
         private final Map<String, Object> row;
 
-        @Schema(title = "The rows data")
+        @Schema(title = "All rows data")
         private final List<Map<String, Object>> rows;
 
-        @Schema(title = "The URI of the stored data")
+        @Schema(title = "URI of stored data")
         private final URI uri;
     }
 }
