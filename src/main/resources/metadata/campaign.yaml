@@ -1,6 +1,6 @@
 group: io.kestra.plugin.klaviyo.campaign
 name: "campaign"
-title: "Campaign"
+title: "Klaviyo Campaign"
 description: "Tasks that fetch Klaviyo campaign details and recipient counts."
 body: "Provide the Klaviyo `apiKey`, `campaignIds`, and fetch strategy to list campaign metadata or counts, respecting API revision headers and rate delays so you can audit targeting, status, and delivery readiness in flows."
 videos: []
