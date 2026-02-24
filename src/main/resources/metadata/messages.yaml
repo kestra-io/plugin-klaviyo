@@ -1,6 +1,6 @@
 group: io.kestra.plugin.klaviyo.campaign.messages
 name: "messages"
-title: "Campaign Messages"
+title: "Klaviyo Campaign Messages"
 description: "Tasks that retrieve Klaviyo campaign messages and their media assets."
 body: "Use the `apiKey` with campaign or message IDs to list messages, fetch message details, and download image assets so you can validate content before sending or archive creative variants."
 videos: []
