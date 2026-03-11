@@ -1,6 +1,14 @@
 package io.kestra.plugin.klaviyo.campaign.messages;
 
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+
 import com.fasterxml.jackson.databind.JsonNode;
+
 import io.kestra.core.http.HttpRequest;
 import io.kestra.core.http.HttpResponse;
 import io.kestra.core.http.client.HttpClient;
@@ -12,6 +20,7 @@ import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.plugin.klaviyo.AbstractKlaviyoTask;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
@@ -19,12 +28,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-import org.slf4j.Logger;
-
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 @SuperBuilder
 @NoArgsConstructor
@@ -85,9 +88,11 @@ public class GetCampaign extends AbstractKlaviyoTask implements RunnableTask<Abs
         long size = 0L;
         List<Map<String, Object>> allCampaigns = new ArrayList<>();
 
-        try (HttpClient httpClient = HttpClient.builder()
-            .runContext(runContext)
-            .build()) {
+        try (
+            HttpClient httpClient = HttpClient.builder()
+                .runContext(runContext)
+                .build()
+        ) {
 
             for (String messageId : rMessageIds) {
                 induceDelay();
@@ -108,7 +113,8 @@ public class GetCampaign extends AbstractKlaviyoTask implements RunnableTask<Abs
                 if (response.getStatus().getCode() != 200) {
                     throw new RuntimeException(
                         "Failed to retrieve campaign for message " + messageId + ": " +
-                            response.getStatus().getCode() + " - " + response.getBody());
+                            response.getStatus().getCode() + " - " + response.getBody()
+                    );
                 }
 
                 JsonNode responseJson = JacksonMapper.ofJson().readTree(response.getBody());

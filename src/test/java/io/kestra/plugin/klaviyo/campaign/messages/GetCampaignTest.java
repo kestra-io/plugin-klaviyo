@@ -1,15 +1,16 @@
 package io.kestra.plugin.klaviyo.campaign.messages;
 
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.klaviyo.AbstractKlaviyoTest;
-import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-
-import java.util.List;
-import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;

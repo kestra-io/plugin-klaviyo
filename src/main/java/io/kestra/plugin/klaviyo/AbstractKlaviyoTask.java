@@ -1,20 +1,21 @@
 package io.kestra.plugin.klaviyo;
 
-import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.Task;
-import io.kestra.core.models.tasks.common.FetchType;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.FileSerde;
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotNull;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-
 import java.io.*;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.Task;
+import io.kestra.core.models.tasks.common.FetchType;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.serializers.FileSerde;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import static org.awaitility.Awaitility.await;
 
@@ -54,8 +55,11 @@ public abstract class AbstractKlaviyoTask extends Task {
             }
             case STORE -> {
                 File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-                try (OutputStream fileOutputStream = new BufferedOutputStream(
-                    new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
+                try (
+                    OutputStream fileOutputStream = new BufferedOutputStream(
+                        new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE
+                    )
+                ) {
                     for (Map<String, Object> campaign : data) {
                         FileSerde.write(fileOutputStream, campaign);
                     }
@@ -75,7 +79,6 @@ public abstract class AbstractKlaviyoTask extends Task {
     protected void induceDelay() {
         await().pollDelay(Duration.ofSeconds(1)).until(() -> true);
     }
-
 
     @Builder
     @Getter
