@@ -18,6 +18,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import static org.awaitility.Awaitility.await;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -30,14 +31,17 @@ public abstract class AbstractKlaviyoTask extends Task {
 
     @Schema(title = "Klaviyo private API Key", description = "Klaviyo Private API Key sent as `Klaviyo-API-Key`; keep secret.")
     @NotNull
+    @PluginProperty(group = "main")
     protected Property<String> apiKey;
 
     @Schema(title = "Base URL", description = "Klaviyo API base URL; defaults to `https://a.klaviyo.com/api`.")
     @Builder.Default
+    @PluginProperty(group = "connection")
     protected Property<String> baseUrl = Property.ofValue("https://a.klaviyo.com/api");
 
     @Schema(title = "Fetch strategy", description = "Controls output: FETCH_ONE first row, FETCH all rows (default), STORE writes all rows to internal storage, NONE skips output.")
     @Builder.Default
+    @PluginProperty(group = "execution")
     protected Property<FetchType> fetchType = Property.ofValue(FetchType.FETCH);
 
     protected String getApiVersion() {

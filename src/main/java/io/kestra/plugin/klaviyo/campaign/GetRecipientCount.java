@@ -28,6 +28,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @NoArgsConstructor
@@ -74,6 +75,7 @@ public class GetRecipientCount extends AbstractKlaviyoTask implements RunnableTa
 
     @Schema(title = "Campaign IDs", description = "Klaviyo campaign IDs to estimate recipients for; preserves input order.")
     @NotNull
+    @PluginProperty(group = "main")
     protected Property<List<String>> campaignIds;
 
     @Override
