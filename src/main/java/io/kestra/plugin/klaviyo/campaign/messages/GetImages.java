@@ -28,6 +28,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @NoArgsConstructor
@@ -74,6 +75,7 @@ public class GetImages extends AbstractKlaviyoTask implements RunnableTask<Abstr
 
     @Schema(title = "Message IDs", description = "Campaign message IDs with channel `mobile_push`; order is preserved.")
     @NotNull
+    @PluginProperty(group = "main")
     protected Property<List<String>> messageIds;
 
     @Override
