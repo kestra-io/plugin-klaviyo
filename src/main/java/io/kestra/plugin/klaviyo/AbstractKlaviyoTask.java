@@ -31,7 +31,7 @@ public abstract class AbstractKlaviyoTask extends Task {
 
     @Schema(title = "Klaviyo private API Key", description = "Klaviyo Private API Key sent as `Klaviyo-API-Key`; keep secret.")
     @NotNull
-    @PluginProperty(group = "main")
+    @PluginProperty(group = "main", secret = true)
     protected Property<String> apiKey;
 
     @Schema(title = "Base URL", description = "Klaviyo API base URL; defaults to `https://a.klaviyo.com/api`.")
