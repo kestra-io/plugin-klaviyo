@@ -59,14 +59,19 @@ import io.kestra.core.models.annotations.PluginProperty;
         ),
         @Example(
             title = "Get campaigns for multiple messages",
+            full = true,
             code = """
-                - id: get_campaigns
-                  type: io.kestra.plugin.klaviyo.campaign.messages.GetCampaign
-                  apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
-                  messageIds:
-                    - "message_id_1"
-                    - "message_id_2"
-                  fetchType: FETCH
+                id: klaviyo_message_campaigns
+                namespace: company.team
+
+                tasks:
+                  - id: get_campaigns
+                    type: io.kestra.plugin.klaviyo.campaign.messages.GetCampaign
+                    apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
+                    messageIds:
+                      - "message_id_1"
+                      - "message_id_2"
+                    fetchType: FETCH
                 """
         )
     }

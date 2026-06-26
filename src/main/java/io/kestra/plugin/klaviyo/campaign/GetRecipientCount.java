@@ -59,14 +59,19 @@ import io.kestra.core.models.annotations.PluginProperty;
         ),
         @Example(
             title = "Get recipient estimations for multiple campaigns",
+            full = true,
             code = """
-                - id: get_estimations
-                  type: io.kestra.plugin.klaviyo.campaign.GetRecipientCount
-                  apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
-                  campaignIds:
-                    - "campaign_id_1"
-                    - "campaign_id_2"
-                  fetchType: FETCH
+                id: klaviyo_recipient_count
+                namespace: company.team
+
+                tasks:
+                  - id: get_estimations
+                    type: io.kestra.plugin.klaviyo.campaign.GetRecipientCount
+                    apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
+                    campaignIds:
+                      - "campaign_id_1"
+                      - "campaign_id_2"
+                    fetchType: FETCH
                 """
         )
     }
