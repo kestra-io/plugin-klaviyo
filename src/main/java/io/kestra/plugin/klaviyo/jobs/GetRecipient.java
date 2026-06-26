@@ -59,14 +59,19 @@ import io.kestra.core.models.annotations.PluginProperty;
         ),
         @Example(
             title = "Get multiple recipient estimation jobs",
+            full = true,
             code = """
-                - id: get_recipient_jobs
-                  type: io.kestra.plugin.klaviyo.jobs.GetRecipient
-                  apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
-                  jobIds:
-                    - "job_id_1"
-                    - "job_id_2"
-                  fetchType: FETCH
+                id: klaviyo_recipient_jobs
+                namespace: company.team
+
+                tasks:
+                  - id: get_recipient_jobs
+                    type: io.kestra.plugin.klaviyo.jobs.GetRecipient
+                    apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
+                    jobIds:
+                      - "job_id_1"
+                      - "job_id_2"
+                    fetchType: FETCH
                 """
         )
     }

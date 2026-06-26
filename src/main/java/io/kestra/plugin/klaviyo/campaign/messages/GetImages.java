@@ -59,14 +59,19 @@ import io.kestra.core.models.annotations.PluginProperty;
         ),
         @Example(
             title = "Get images for multiple messages",
+            full = true,
             code = """
-                - id: get_images
-                  type: io.kestra.plugin.klaviyo.campaign.messages.GetImages
-                  apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
-                  messageIds:
-                    - "message_id_1"
-                    - "message_id_2"
-                  fetchType: FETCH
+                id: klaviyo_message_images
+                namespace: company.team
+
+                tasks:
+                  - id: get_images
+                    type: io.kestra.plugin.klaviyo.campaign.messages.GetImages
+                    apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
+                    messageIds:
+                      - "message_id_1"
+                      - "message_id_2"
+                    fetchType: FETCH
                 """
         )
     }
