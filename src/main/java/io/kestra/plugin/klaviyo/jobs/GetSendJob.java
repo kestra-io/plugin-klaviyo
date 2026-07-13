@@ -59,14 +59,19 @@ import io.kestra.core.models.annotations.PluginProperty;
         ),
         @Example(
             title = "Get multiple campaign send jobs",
+            full = true,
             code = """
-                - id: get_send_jobs
-                  type: io.kestra.plugin.klaviyo.jobs.GetSendJob
-                  apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
-                  jobIds:
-                    - "job_id_1"
-                    - "job_id_2"
-                  fetchType: FETCH
+                id: klaviyo_send_jobs
+                namespace: company.team
+
+                tasks:
+                  - id: get_send_jobs
+                    type: io.kestra.plugin.klaviyo.jobs.GetSendJob
+                    apiKey: "{{ secret('KLAVIYO_API_KEY') }}"
+                    jobIds:
+                      - "job_id_1"
+                      - "job_id_2"
+                    fetchType: FETCH
                 """
         )
     }
