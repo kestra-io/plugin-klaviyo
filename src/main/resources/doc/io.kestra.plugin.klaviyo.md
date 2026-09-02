@@ -4,7 +4,7 @@ Retrieve Klaviyo campaign and job data from Kestra flows.
 
 ## Authentication
 
-Set `apiKey` (required) to your Klaviyo private API key. Optionally override `baseUrl` (default `https://a.klaviyo.com/api`). Store secrets in [secrets](https://kestra.io/docs/concepts/secret) and apply connection properties globally with [plugin defaults](https://kestra.io/docs/workflow-components/plugin-defaults).
+Set `apiKey` (required) to your Klaviyo private API key. Optionally override `baseUrl` (default `https://a.klaviyo.com/api`). Store secrets in [secrets](https://kestra.io/docs/concepts/secret) and set connection properties on each task.
 
 ## Common properties
 
